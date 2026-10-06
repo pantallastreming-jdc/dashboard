@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JDC Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBg: '#1e2124',
+                        darkCard: '#2b2d31',
+                        darkModal: '#26282c',
+                        darkInput: '#18191c',
+                        brandBlue: '#3b82f6',
+                        brandHover: '#2563eb'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #3a404a 0%, #1a1c1e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .glass-panel {
+            background: rgba(30, 33, 36, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(43, 45, 49, 0.65);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.25s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(55, 58, 64, 0.85);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #18191c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a3d44;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f535c;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col min-h-screen">
+
+    <div class="max-w-7xl mx-auto w-full flex-grow flex flex-col gap-6">
+
+        <!-- Barra Superior -->
+        <header class="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+            <div class="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                <!-- Buscador -->
+                <form id="searchForm" class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar en Google..." 
+                           class="w-full bg-darkInput text-sm rounded-full pl-10 pr-4 py-2.5 border border-transparent focus:border-brandBlue focus:outline-none transition-all placeholder-gray-500 text-white">
+                </form>
+
+                <!-- Pestañas de Grupos -->
+                <nav id="groupsContainer" class="flex flex-wrap items-center gap-2">
+                    <!-- Dinámico -->
+                </nav>
+
+                <!-- Botón Añadir Grupo -->
+                <button onclick="openAddGroupModal()" class="w-9 h-9 rounded-full bg-darkInput hover:bg-gray-700 flex items-center justify-center text-gray-300 hover:text-white transition-all border border-white/5" title="Añadir Grupo">
+                    <i class="fa-solid fa-plus text-sm"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-3 ml-auto">
+                <button onclick="toggleSettingsMenu()" class="p-2.5 rounded-xl hover:bg-white/5 text-gray-300 hover:text-white transition-all">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Grid de Marcadores -->
+        <main class="glass-panel rounded-2xl p-6 flex-grow shadow-2xl relative min-h-[500px]">
+            <div id="bookmarksGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Dinámico -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Editar/Añadir Marcador -->
+    <div id="bookmarkModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-darkModal border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl text-sm">
+            <div class="p-4 border-b border-white/5 font-semibold text-gray-200 text-base">
+                Editar marcador
+            </div>
+            
+            <form id="bookmarkForm" onsubmit="saveBookmark(event)" class="p-5 space-y-4">
+                <input type="hidden" id="bmId">
+                
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-400 mb-1.5">Título</label>
+                    <input type="text" id="bmTitle" required 
+                           class="w-full bg-darkInput border border-white/10 rounded-lg p-2.5 text-white focus:border-brandBlue focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-400 mb-1.5">URL</label>
+                    <input type="text" id="bmUrl" required placeholder="https://ejemplo.com" 
+                           class="w-full bg-darkInput border border-white/10 rounded-lg p-2.5 text-white focus:border-brandBlue focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-400 mb-1.5">Imagen (Favicon o URL)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="bmImage" placeholder="URL de la imagen" 
+                               class="flex-grow bg-darkInput border border-white/10 rounded-lg p-2.5 text-white focus:border-brandBlue focus:outline-none">
+                        <button type="button" onclick="previewImage()" class="bg-brandBlue hover:bg-brandHover text-white px-3.5 rounded-lg flex items-center justify-center transition-all">
+                            <i class="fa-solid fa-eye text-base"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-start gap-3 pt-2">
+                    <button type="submit" class="bg-brandBlue hover:bg-brandHover text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-all">
+                        <i class="fa-solid fa-check"></i> GUARDAR
+                    </button>
+                    <button type="button" onclick="closeModal('bookmarkModal')" class="bg-darkInput hover:bg-gray-700 text-gray-300 px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-all">
+                        <i class="fa-solid fa-xmark"></i> CANCELAR
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar/Añadir Grupo -->
+    <div id="groupModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-darkModal border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl text-sm">
+            <div class="p-4 border-b border-white/5 font-semibold text-gray-200 text-base">
+                Editar grupo
+            </div>
+
+            <form id="groupForm" onsubmit="saveGroup(event)" class="p-5 space-y-4">
+                <input type="hidden" id="groupId">
+
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-400 mb-1.5">Título</label>
+                    <input type="text" id="groupTitle" required placeholder="Ej: Deportes"
+                           class="w-full bg-darkInput border border-white/10 rounded-lg p-2.5 text-white focus:border-brandBlue focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase font-bold text-gray-400 mb-1.5">Ícono (FontAwesome)</label>
+                    <input type="text" id="groupIcon" placeholder="fa-trophy" 
+                           class="w-full bg-darkInput border border-white/10 rounded-lg p-2.5 text-white focus:border-brandBlue focus:outline-none">
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <div class="flex gap-2">
+                        <button type="submit" class="bg-brandBlue hover:bg-brandHover text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all text-xs">
+                            <i class="fa-solid fa-check"></i> GUARDAR
+                        </button>
+                        <button type="button" onclick="closeModal('groupModal')" class="bg-darkInput hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all text-xs">
+                            <i class="fa-solid fa-xmark"></i> CANCELAR
+                        </button>
+                    </div>
+                    <button type="button" id="deleteGroupBtn" onclick="deleteGroupFromModal()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-2 rounded-lg font-semibold flex items-center gap-1.5 transition-all text-xs hidden">
+                        <i class="fa-solid fa-trash"></i> ELIMINAR
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // AdBlock - Dominios Bloqueados
+        const blockedDomains = [
+            'doubleclick.net', 'googleadservices.com', 'adservice.google.com',
+            'adnxs.com', 'popads.net', 'outbrain.com', 'taboola.com',
+            'adroll.com', 'exoclick.com', 'juicyads.com'
+        ];
+
+        function isUrlAllowed(url) {
+            if (!url) return false;
+            try {
+                const formattedUrl = normalizeUrl(url);
+                const parsedUrl = new URL(formattedUrl);
+                const hostname = parsedUrl.hostname.toLowerCase();
+                return !blockedDomains.some(domain => hostname.includes(domain));
+            } catch (e) {
+                return true;
+            }
+        }
+
+        const defaultData = {
+            activeGroup: 'home',
+            groups: [
+                { id: 'home', title: 'Home', icon: 'fa-house' },
+                { id: 'google', title: 'Google', icon: 'fa-brands fa-google' },
+                { id: 'peliculas', title: 'Películas', icon: 'fa-film' },
+                { id: 'musica', title: 'Música', icon: 'fa-music' }
+            ],
+            bookmarks: [
+                { id: 'bm1', groupId: 'home', title: 'Google', url: 'https://google.com', image: '' },
+                { id: 'bm2', groupId: 'home', title: 'YouTube', url: 'https://youtube.com', image: '' },
+                { id: 'bm3', groupId: 'google', title: 'Gmail', url: 'https://mail.google.com', image: '' }
+            ]
+        };
+
+        let appState = JSON.parse(localStorage.getItem('foxyTabsData')) || defaultData;
+
+        function saveData() {
+            localStorage.setItem('foxyTabsData', JSON.stringify(appState));
+        }
+
+        function normalizeUrl(url) {
+            if (!url) return '';
+            if (!/^https?:\/\//i.test(url)) return 'https://' + url;
+            return url;
+        }
+
+        function getFaviconUrl(url) {
+            try {
+                const formattedUrl = normalizeUrl(url);
+                if (!isUrlAllowed(formattedUrl)) return ''; 
+                const parsedUrl = new URL(formattedUrl);
+                return `https://www.google.com/s2/favicons?domain=${parsedUrl.hostname}&sz=128`;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function getAutoIcon(title) {
+            const t = title.toLowerCase();
+            if (t.includes('música') || t.includes('musica')) return 'fa-music';
+            if (t.includes('peli') || t.includes('cine')) return 'fa-film';
+            if (t.includes('juego')) return 'fa-gamepad';
+            if (t.includes('libro')) return 'fa-book';
+            if (t.includes('deporte')) return 'fa-trophy';
+            return 'fa-folder';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderGroups();
+            renderBookmarks();
+
+            document.getElementById('searchForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const query = document.getElementById('searchInput').value.trim();
+                if (query) window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            });
+
+            document.getElementById('bmUrl').addEventListener('input', (e) => {
+                const inputUrl = e.target.value.trim();
+                if (isUrlAllowed(inputUrl)) {
+                    const autoLogo = getFaviconUrl(inputUrl);
+                    if (autoLogo) document.getElementById('bmImage').value = autoLogo;
+                }
+            });
+
+            document.getElementById('groupTitle').addEventListener('input', (e) => {
+                const title = e.target.value;
+                if (title.trim()) document.getElementById('groupIcon').value = getAutoIcon(title);
+            });
+        });
+
+        function renderGroups() {
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = '';
+
+            appState.groups.forEach(group => {
+                const isActive = group.id === appState.activeGroup;
+                const button = document.createElement('button');
+                button.className = `flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                    isActive 
+                    ? 'bg-brandBlue text-white border-brandBlue shadow-lg shadow-blue-500/20' 
+                    : 'bg-darkInput text-gray-300 border-white/5 hover:bg-white/10 hover:text-white'
+                }`;
+                
+                const groupIcon = group.icon || getAutoIcon(group.title);
+                button.innerHTML = `<i class="fa-solid ${groupIcon}"></i><span>${escapeHtml(group.title)}</span>`;
+
+                button.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    openEditGroupModal(group.id);
+                });
+
+                button.onclick = () => {
+                    appState.activeGroup = group.id;
+                    saveData();
+                    renderGroups();
+                    renderBookmarks();
+                };
+
+                container.appendChild(button);
+            });
+        }
+
+        function renderBookmarks() {
+            const grid = document.getElementById('bookmarksGrid');
+            grid.innerHTML = '';
+
+            const currentBookmarks = appState.bookmarks.filter(b => b.groupId === appState.activeGroup);
+
+            currentBookmarks.forEach(bm => {
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center relative group cursor-pointer aspect-square';
+                
+                const faviconUrl = bm.image || getFaviconUrl(bm.url);
+
+                card.innerHTML = `
+                    <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                        <button onclick="openEditBookmarkModal('${bm.id}', event)" class="p-1.5 bg-darkInput/80 rounded-md text-gray-300 hover:text-white hover:bg-brandBlue">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteBookmark('${bm.id}', event)" class="p-1.5 bg-darkInput/80 rounded-md text-gray-300 hover:text-red-400 hover:bg-red-900/50">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="w-12 h-12 mb-3 flex items-center justify-center overflow-hidden rounded-xl">
+                        <img src="${faviconUrl}" alt="${escapeHtml(bm.title)}" class="max-w-full max-h-full object-contain" onerror="this.src='https://via.placeholder.com/64/3b82f6/white?text=${bm.title.charAt(0).toUpperCase()}'">
+                    </div>
+                    <span class="text-xs font-medium text-gray-200 truncate w-full px-1">${escapeHtml(bm.title)}</span>
+                `;
+
+                card.onclick = (e) => {
+                    if (!e.defaultPrevented) window.open(normalizeUrl(bm.url), '_blank');
+                };
+
+                grid.appendChild(card);
+            });
+
+            const addCard = document.createElement('div');
+            addCard.className = 'border-2 border-dashed border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-brandBlue hover:bg-white/5 transition-all text-gray-500 hover:text-white aspect-square';
+            addCard.innerHTML = `<i class="fa-solid fa-plus text-4xl"></i>`;
+            addCard.onclick = () => openAddBookmarkModal();
+            grid.appendChild(addCard);
+        }
+
+        function openAddBookmarkModal() {
+            document.getElementById('bmId').value = '';
+            document.getElementById('bmTitle').value = '';
+            document.getElementById('bmUrl').value = '';
+            document.getElementById('bmImage').value = '';
+            document.getElementById('bookmarkModal').classList.remove('hidden');
+        }
+
+        function openEditBookmarkModal(id, event) {
+            if (event) event.stopPropagation();
+            const bm = appState.bookmarks.find(b => b.id === id);
+            if (!bm) return;
+
+            document.getElementById('bmId').value = bm.id;
+            document.getElementById('bmTitle').value = bm.title;
+            document.getElementById('bmUrl').value = bm.url;
+            document.getElementById('bmImage').value = bm.image || getFaviconUrl(bm.url);
+            document.getElementById('bookmarkModal').classList.remove('hidden');
+        }
+
+        function saveBookmark(e) {
+            e.preventDefault();
+            const id = document.getElementById('bmId').value;
+            const title = document.getElementById('bmTitle').value;
+            let url = normalizeUrl(document.getElementById('bmUrl').value.trim());
+
+            if (!isUrlAllowed(url)) {
+                alert('Esta URL está bloqueada por el filtro publicitario.');
+                return;
+            }
+
+            let image = document.getElementById('bmImage').value.trim() || getFaviconUrl(url);
+
+            if (id) {
+                const index = appState.bookmarks.findIndex(b => b.id === id);
+                if (index !== -1) appState.bookmarks[index] = { ...appState.bookmarks[index], title, url, image };
+            } else {
+                appState.bookmarks.push({ id: 'bm_' + Date.now(), groupId: appState.activeGroup, title, url, image });
+            }
+
+            saveData();
+            renderBookmarks();
+            closeModal('bookmarkModal');
+        }
+
+        function deleteBookmark(id, event) {
+            if (event) event.stopPropagation();
+            appState.bookmarks = appState.bookmarks.filter(b => b.id !== id);
+            saveData();
+            renderBookmarks();
+        }
+
+        function previewImage() {
+            const url = document.getElementById('bmImage').value;
+            if (url) window.open(url, '_blank');
+        }
+
+        function openAddGroupModal() {
+            document.getElementById('groupId').value = '';
+            document.getElementById('groupTitle').value = '';
+            document.getElementById('groupIcon').value = '';
+            document.getElementById('deleteGroupBtn').classList.add('hidden');
+            document.getElementById('groupModal').classList.remove('hidden');
+        }
+
+        function openEditGroupModal(groupId) {
+            const group = appState.groups.find(g => g.id === groupId);
+            if (!group) return;
+
+            document.getElementById('groupId').value = group.id;
+            document.getElementById('groupTitle').value = group.title;
+            document.getElementById('groupIcon').value = group.icon || getAutoIcon(group.title);
+            document.getElementById('deleteGroupBtn').classList.remove('hidden');
+            document.getElementById('groupModal').classList.remove('hidden');
+        }
+
+        function saveGroup(e) {
+            e.preventDefault();
+            const id = document.getElementById('groupId').value;
+            const title = document.getElementById('groupTitle').value;
+            let icon = document.getElementById('groupIcon').value.trim() || getAutoIcon(title);
+
+            if (id) {
+                const index = appState.groups.findIndex(g => g.id === id);
+                if (index !== -1) appState.groups[index] = { ...appState.groups[index], title, icon };
+            } else {
+                const newGroup = { id: 'group_' + Date.now(), title, icon };
+                appState.groups.push(newGroup);
+                appState.activeGroup = newGroup.id;
+            }
+
+            saveData();
+            renderGroups();
+            renderBookmarks();
+            closeModal('groupModal');
+        }
+
+        function deleteGroupFromModal() {
+            const groupId = document.getElementById('groupId').value;
+            if (!groupId) return;
+
+            if (appState.groups.length <= 1) {
+                alert('No puedes eliminar el único grupo.');
+                return;
+            }
+
+            if (confirm('¿Eliminar grupo y sus marcadores?')) {
+                appState.bookmarks = appState.bookmarks.filter(b => b.groupId !== groupId);
+                appState.groups = appState.groups.filter(g => g.id !== groupId);
+
+                if (appState.activeGroup === groupId) appState.activeGroup = appState.groups[0].id;
+
+                saveData();
+                renderGroups();
+                renderBookmarks();
+                closeModal('groupModal');
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function toggleSettingsMenu() {
+            alert('Tip: Haz clic derecho en una pestaña para editarla o borrarla.');
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+    </script>
+</body>
+</html>
